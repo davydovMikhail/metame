@@ -152,9 +152,9 @@ describe('Token test', async () => {
     });
 
     mocha.step("Check transfer for not whitelisted users", async function () {
-        await expect(token.connect(user3).transfer(user1.address, parseEther('10'))).to.be.revertedWith("You are not whitelisted.");
+        await expect(token.connect(user3).transfer(burner.address, parseEther('10'))).to.be.revertedWith("You are not whitelisted.");
         await token.connect(user3).approve(burner.address, parseEther('10'));
-        await expect(token.connect(burner).transferFrom(user3.address, user1.address, parseEther('10'))).to.be.revertedWith("You are not whitelisted.");
+        await expect(token.connect(burner).transferFrom(user3.address, minter.address, parseEther('10'))).to.be.revertedWith("You are not whitelisted.");
     });
 
     mocha.step("Replenishment of user account from whitelist", async function () {

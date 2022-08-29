@@ -41,12 +41,12 @@ contract Metame is ERC20, Pausable, AccessControl {
         _burn(to, amount);
     }
 
-    function changeWhitelist(address user, bool condition) public onlyRole(CONTROLLER_ROLE) {
-        whitelist[user] = condition;
+    function changeWhitelist(address user, bool status) public onlyRole(CONTROLLER_ROLE) {
+        whitelist[user] = status;
     }
 
-    function changeBlocklist(address user, bool condition) public onlyRole(CONTROLLER_ROLE) {
-        blocklist[user] = condition;
+    function changeBlocklist(address user, bool status) public onlyRole(CONTROLLER_ROLE) {
+        blocklist[user] = status;
     }
 
     function _beforeTokenTransfer(
@@ -54,7 +54,7 @@ contract Metame is ERC20, Pausable, AccessControl {
         address to,
         uint256 amount
     ) internal override {
-        require(!blocklist[msg.sender], "You are blocklisted.");
+        require(!blocklist[from] && !blocklist[to], "You are blocklisted.");
         if (paused()) {
             require(whitelist[msg.sender], "You are not whitelisted.");
         }
