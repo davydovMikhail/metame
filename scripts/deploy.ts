@@ -1,10 +1,13 @@
 import { ethers } from "hardhat";
+import { parseEther } from "ethers/lib/utils";
 
 async function main() {
   
   const Metame = await ethers.getContractFactory("Metame");
 
-  const metame = await Metame.deploy();
+  const initialSupply = parseEther(process.env.INITIAL_SUPPLY as string)
+  
+  const metame = await Metame.deploy(initialSupply);
 
   await metame.deployed();
 

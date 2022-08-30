@@ -16,7 +16,6 @@ describe('Token test', async () => {
     let pauser: SignerWithAddress;
     let minter: SignerWithAddress;
     let burner: SignerWithAddress;
-    let controller: SignerWithAddress;
     let whitelistUser1: SignerWithAddress;
     let whitelistUser2: SignerWithAddress;
     let whitelistUser3: SignerWithAddress;
@@ -26,12 +25,12 @@ describe('Token test', async () => {
 
 
     beforeEach(async () => {
-        [ owner, user1, user2, user3, admin, pauser, minter, burner, controller, whitelistUser1, whitelistUser2, whitelistUser3 ] = await ethers.getSigners();
+        [ owner, user1, user2, user3, admin, pauser, minter, burner, whitelistUser1, whitelistUser2, whitelistUser3 ] = await ethers.getSigners();
     });
 
     mocha.step("Deploy token", async function () {
         let TokenF = await ethers.getContractFactory("Metame");
-        token = await TokenF.connect(owner).deploy();
+        token = await TokenF.connect(owner).deploy(primaryTotalSupply);
     });
 
     mocha.step("Check constant", async function () {
@@ -71,10 +70,9 @@ describe('Token test', async () => {
 
     mocha.step("Check AccessControll for ADMIN_ROLE", async function () {
         await expect(token.connect(user1).grantRole((await token.ADMIN_ROLE()), admin.address)).to.be.revertedWith(`AccessControl: account ${user1.address.toLowerCase()} is missing role ${(await token.DEFAULT_ADMIN_ROLE()).toLowerCase()}`);
-        await expect(token.connect(user1).grantRole((await token.PAUSER_ROLE()), controller.address)).to.be.revertedWith(`AccessControl: account ${user1.address.toLowerCase()} is missing role ${(await token.ADMIN_ROLE()).toLowerCase()}`);
-        await expect(token.connect(user1).grantRole((await token.MINTER_ROLE()), controller.address)).to.be.revertedWith(`AccessControl: account ${user1.address.toLowerCase()} is missing role ${(await token.ADMIN_ROLE()).toLowerCase()}`);
-        await expect(token.connect(user1).grantRole((await token.BURNER_ROLE()), controller.address)).to.be.revertedWith(`AccessControl: account ${user1.address.toLowerCase()} is missing role ${(await token.ADMIN_ROLE()).toLowerCase()}`);
-        await expect(token.connect(user1).grantRole((await token.CONTROLLER_ROLE()), controller.address)).to.be.revertedWith(`AccessControl: account ${user1.address.toLowerCase()} is missing role ${(await token.ADMIN_ROLE()).toLowerCase()}`);
+        await expect(token.connect(user1).grantRole((await token.PAUSER_ROLE()), pauser.address)).to.be.revertedWith(`AccessControl: account ${user1.address.toLowerCase()} is missing role ${(await token.ADMIN_ROLE()).toLowerCase()}`);
+        await expect(token.connect(user1).grantRole((await token.MINTER_ROLE()), minter.address)).to.be.revertedWith(`AccessControl: account ${user1.address.toLowerCase()} is missing role ${(await token.ADMIN_ROLE()).toLowerCase()}`);
+        await expect(token.connect(user1).grantRole((await token.BURNER_ROLE()), burner.address)).to.be.revertedWith(`AccessControl: account ${user1.address.toLowerCase()} is missing role ${(await token.ADMIN_ROLE()).toLowerCase()}`);
     });
 
     mocha.step("Grant roles", async function () {
@@ -82,7 +80,6 @@ describe('Token test', async () => {
         await token.connect(admin).grantRole((await token.PAUSER_ROLE()), pauser.address);
         await token.connect(admin).grantRole((await token.MINTER_ROLE()), minter.address);
         await token.connect(admin).grantRole((await token.BURNER_ROLE()), burner.address);
-        await token.connect(admin).grantRole((await token.CONTROLLER_ROLE()), controller.address);
     });
 
     mocha.step("Check getRoleAdmin function", async function () {
@@ -91,22 +88,20 @@ describe('Token test', async () => {
         const PAUSER_ROLE = await token.PAUSER_ROLE();
         const MINTER_ROLE = await token.MINTER_ROLE();
         const BURNER_ROLE = await token.BURNER_ROLE();
-        const CONTROLLER_ROLE = await token.CONTROLLER_ROLE();
         
         expect(await token.getRoleAdmin(ADMIN_ROLE)).to.equal(DEFAULT_ADMIN_ROLE);
         expect(await token.getRoleAdmin(PAUSER_ROLE)).to.equal(ADMIN_ROLE);
         expect(await token.getRoleAdmin(MINTER_ROLE)).to.equal(ADMIN_ROLE);
         expect(await token.getRoleAdmin(BURNER_ROLE)).to.equal(ADMIN_ROLE);
-        expect(await token.getRoleAdmin(CONTROLLER_ROLE)).to.equal(ADMIN_ROLE);
     });
 
     mocha.step("Check AccessControl for changeBlocklist function", async function () {
-        await expect(token.connect(user1).changeBlocklist(user2.address, true)).to.be.revertedWith(`AccessControl: account ${user1.address.toLowerCase()} is missing role ${(await token.CONTROLLER_ROLE()).toLowerCase()}`);
+        await expect(token.connect(user1).changeBlocklist(user2.address, true)).to.be.revertedWith(`AccessControl: account ${user1.address.toLowerCase()} is missing role ${(await token.ADMIN_ROLE()).toLowerCase()}`);
     });
 
     mocha.step("Call changeBlocklist function", async function () {
-        await token.connect(controller).changeBlocklist(user1.address, true);
-        await token.connect(controller).changeBlocklist(user2.address, true);
+        await token.connect(admin).changeBlocklist(user1.address, true);
+        await token.connect(admin).changeBlocklist(user2.address, true);
     });
 
     mocha.step("Check blocklist mapping", async function () {
@@ -125,14 +120,14 @@ describe('Token test', async () => {
     });
 
     mocha.step("Check AccessControl for changeWhitelist function", async function () {
-        await expect(token.connect(user1).changeWhitelist(whitelistUser1.address, true)).to.be.revertedWith(`AccessControl: account ${user1.address.toLowerCase()} is missing role ${(await token.CONTROLLER_ROLE()).toLowerCase()}`);
+        await expect(token.connect(user1).changeWhitelist(whitelistUser1.address, true)).to.be.revertedWith(`AccessControl: account ${user1.address.toLowerCase()} is missing role ${(await token.ADMIN_ROLE()).toLowerCase()}`);
     });
 
     mocha.step("Call changeWhitelist function", async function () {
-        await token.connect(controller).changeWhitelist(whitelistUser1.address, true);
-        await token.connect(controller).changeWhitelist(whitelistUser2.address, true);
-        await token.connect(controller).changeWhitelist(whitelistUser3.address, true);
-        await token.connect(controller).changeWhitelist(owner.address, true);
+        await token.connect(admin).changeWhitelist(whitelistUser1.address, true);
+        await token.connect(admin).changeWhitelist(whitelistUser2.address, true);
+        await token.connect(admin).changeWhitelist(whitelistUser3.address, true);
+        await token.connect(admin).changeWhitelist(owner.address, true);
     });
 
     mocha.step("Check whitelist mapping", async function () {
@@ -152,9 +147,9 @@ describe('Token test', async () => {
     });
 
     mocha.step("Check transfer for not whitelisted users", async function () {
-        await expect(token.connect(user3).transfer(burner.address, parseEther('10'))).to.be.revertedWith("You are not whitelisted.");
+        await expect(token.connect(user3).transfer(burner.address, parseEther('10'))).to.be.revertedWith("Token on pause.");
         await token.connect(user3).approve(burner.address, parseEther('10'));
-        await expect(token.connect(burner).transferFrom(user3.address, minter.address, parseEther('10'))).to.be.revertedWith("You are not whitelisted.");
+        await expect(token.connect(burner).transferFrom(user3.address, minter.address, parseEther('10'))).to.be.revertedWith("Token on pause.");
     });
 
     mocha.step("Replenishment of user account from whitelist", async function () {
